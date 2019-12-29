@@ -1,6 +1,10 @@
 
-This program reads the information from the GPS.
+# GPS Info
 
+This program run on linux and reads the information from the GPS
+through the gps service daemon (gpsd).
+
+### Example
 
  GPS readings
 ------------------------------------------------------------
