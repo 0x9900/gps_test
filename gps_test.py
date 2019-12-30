@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+"""This program run on linux and reads the information from the GPS
+through the gps service daemon (gpsd)."""
+
+import os
 import select
 import string
 import sys
@@ -8,11 +12,24 @@ import threading
 import time
 import tty
 
+from argparse import ArgumentParser
 from operator import attrgetter
 
-from gps import *
+from gps import gps, WATCH_ENABLE
+
+
+__author__ = "Fred C."
+__email__ = "<github-fred@hidzz.com>"
+__version__ = '0.1.1'
+
+
+class Root(object):
+  """Store global variables"""
+  timer = 5
 
 class GpsPoller(threading.Thread):
+  """Spawn a thread and read the gps info when they are available"""
+
   _gpsd = None
 
   def __init__(self):
@@ -27,12 +44,14 @@ class GpsPoller(threading.Thread):
       _ = self._gpsd.waiting(60) and self._gpsd.next()
 
   def gps_data(self):
+    """return the gpsd internal object"""
     if not self.running:
       raise SystemError('GpsPoller not running')
     return self._gpsd
 
 
 def to_grid(dec_lat, dec_lon):
+  """Convert gps coordonated into square grid"""
   try:
     adj_lat = dec_lat + 90.0
     adj_lon = dec_lon + 180.0
@@ -56,11 +75,12 @@ def to_grid(dec_lat, dec_lon):
   return grid
 
 def getch():
+  """Non blocking Read. Return any character from the keyboard"""
   sysfd = sys.stdin.fileno()
   old_settings = termios.tcgetattr(sysfd)
   try:
     tty.setraw(sysfd)
-    [fdin, _1, _2] = select.select([sysfd], [], [], 1)
+    [fdin, _0, _1] = select.select([sysfd], [], [], Root.timer)
     if fdin:
       char = sys.stdin.read(1)
     else:
@@ -70,9 +90,12 @@ def getch():
   return char
 
 def clear():
+  """Clean the screen and return the cursor the the origin"""
   sys.stdout.write('\033[2j\033c\x1bc')
 
 def read_gps(gps_p):
+  """Display the gps informations"""
+
   print 'Staring gps thread'
   gps_p.start()                   # start it up
   gpsd = gps_p.gps_data()
@@ -112,6 +135,19 @@ def read_gps(gps_p):
   gps_p.join()
 
 def main():
+  """At the beginning there a main function"""
+  parser = ArgumentParser(prog=os.path.basename(__file__),
+                          description=__doc__)
+  parser.add_argument('-v', '--version', action='version', version=__version__,
+                      help='Program version')
+  parser.add_argument('-d', '--delay', default=Root.timer, type=int,
+                      help='Polling interval [default: %(default)s]')
+  options = parser.parse_args()
+
+  if options.delay < 0:
+    raise parser.error("Argument error")
+  Root.timer = options.delay
+
   try:
     gps_p = GpsPoller()          # create the thread
     read_gps(gps_p)
@@ -121,7 +157,7 @@ def main():
     if err:
       print err
     gps_p.running = False
-    gps_p.join()                # wait for the thread to finish
+    gps_p.join()                 # wait for the thread to finish
   print "Done.\nExiting."
 
 if __name__ == "__main__":
