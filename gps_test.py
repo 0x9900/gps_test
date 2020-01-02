@@ -23,6 +23,10 @@ __email__ = "<github-fred@hidzz.com>"
 __version__ = '0.1.1'
 
 
+GPS_STATUS = ("NO_FIX", "FIX", "DGPS_FIX")
+GPS_MODE = ("ZERO", "NO_FIX", "2D", "3D")
+
+
 class Root(object):
   """Store global variables"""
   timer = 5
@@ -106,7 +110,7 @@ def read_gps(gps_p):
 
   while gps_p.running:
     clear()
-    print ' GPS readings'
+    print ' GPS readings [%d second interval]' % Root.timer
     print '-' * 60
     print 'time utc    ', gpsd.utc
     print 'latitude    ', gpsd.fix.latitude
@@ -119,7 +123,8 @@ def read_gps(gps_p):
     print 'speed (m/s) ', gpsd.fix.speed
     print 'climb       ', gpsd.fix.climb
     print 'track       ', gpsd.fix.track
-    print 'mode        ', gpsd.fix.mode
+    print 'status      ', GPS_STATUS[gpsd.status]
+    print 'mode        ', GPS_MODE[gpsd.fix.mode]
     print 'grid        ', to_grid(gpsd.fix.latitude, gpsd.fix.longitude)
     if gpsd.satellites:
       print 'satellites  '
