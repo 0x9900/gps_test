@@ -97,6 +97,32 @@ def clear():
   """Clean the screen and return the cursor the the origin"""
   sys.stdout.write('\033[2j\033c\x1bc')
 
+def gps_display(gpsd):
+  clear()
+  print ' GPS readings [%d second interval]' % Root.timer
+  print ' Press [ Q ] to quit, [ Space ] Refresh'
+  print '-' * 60
+  print 'time utc    ', gpsd.utc
+  print 'latitude    ', gpsd.fix.latitude
+  print 'longitude   ', gpsd.fix.longitude
+  print 'altitude (m)', gpsd.fix.altitude
+  print 'speed (m/s) ', gpsd.fix.speed
+  print 'climb       ', gpsd.fix.climb
+  print 'track       ', gpsd.fix.track
+  print 'status      ', GPS_STATUS[gpsd.status]
+  print 'mode        ', GPS_MODE[gpsd.fix.mode]
+  print 'grid        ', to_grid(gpsd.fix.latitude, gpsd.fix.longitude)
+  print 'epx         ', gpsd.fix.epx
+  print 'epy         ', gpsd.fix.epy
+  print 'epv         ', gpsd.fix.epv
+  print 'ept         ', gpsd.fix.ept
+  print 'eps         ', gpsd.fix.eps
+  if gpsd.satellites:
+    print 'Satellites:'
+    for sat in sorted(gpsd.satellites, key=attrgetter('used'), reverse=True):
+      print '  ', sat
+
+
 def read_gps(gps_p):
   """Display the gps informations"""
 
@@ -107,34 +133,14 @@ def read_gps(gps_p):
   while not getattr(gpsd, 'satellites'):
     print 'Waiting for satellite informations'
     time.sleep(1)
+  gps_display(gpsd)
 
   while gps_p.running:
-    clear()
-    print ' GPS readings [%d second interval]' % Root.timer
-    print '-' * 60
-    print 'time utc    ', gpsd.utc
-    print 'latitude    ', gpsd.fix.latitude
-    print 'longitude   ', gpsd.fix.longitude
-    print 'altitude (m)', gpsd.fix.altitude
-    print 'eps         ', gpsd.fix.eps
-    print 'epx         ', gpsd.fix.epx
-    print 'epv         ', gpsd.fix.epv
-    print 'ept         ', gpsd.fix.ept
-    print 'speed (m/s) ', gpsd.fix.speed
-    print 'climb       ', gpsd.fix.climb
-    print 'track       ', gpsd.fix.track
-    print 'status      ', GPS_STATUS[gpsd.status]
-    print 'mode        ', GPS_MODE[gpsd.fix.mode]
-    print 'grid        ', to_grid(gpsd.fix.latitude, gpsd.fix.longitude)
-    if gpsd.satellites:
-      print 'satellites  '
-      for sat in sorted(gpsd.satellites, key=attrgetter('used'), reverse=True):
-        print '	', sat
-    print '-' * 60
-    print ' Press [ Q ] to quit, [ Space ] Refresh'
     key_pressed = getch()
     if key_pressed and key_pressed.upper() == 'Q':
       break
+    else:
+      gps_display(gpsd)
 
   gps_p.running = False
   gps_p.join()
