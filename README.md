@@ -4,6 +4,15 @@
 This program run on linux and reads the information from the GPS
 through the gps service daemon (gpsd).
 
+# Python packages
+
+The program `gps_test` depends on the python `gps` package. Use the
+following command to install this package.
+
+```
+sudo pip install gps
+```
+
 ### Example
 
      GPS readings
